@@ -31,10 +31,11 @@ class AntiVPN{
 
 	/**
 	 * @param string $ip
-	 * @param Closure<AntiVPNResult|AntiVPNException> $callback
+	 * @param Closure<AntiVPNResult> $on_success
+	 * @param Closure<AntiVPNException> $on_failure
 	 */
-	public function check(string $ip, Closure $callback) : void{
-		$this->pool->pickLeastBusyThread()->request($ip, $this->api_key, $callback);
+	public function check(string $ip, Closure $on_success, Closure $on_failure) : void{
+		$this->pool->pickLeastBusyThread()->request($ip, $this->api_key, $on_success, $on_failure);
 	}
 
 	public function close() : void{

@@ -17,7 +17,7 @@ final class AntiVPNThread extends Thread{
 	/** @var int */
 	private static $callback_ids = 0;
 
-	/** @var Closure[] */
+	/** @var AntiVPNResultCallback[] */
 	private static $callbacks = [];
 
 	/** @var bool */
@@ -61,8 +61,8 @@ final class AntiVPNThread extends Thread{
 		return count($this->incoming) + ($this->working ? INT32_MAX : 0);
 	}
 
-	public function request(string $ip, string $key, Closure $callback) : void{
-		self::$callbacks[$callback_id = ++self::$callback_ids] = $callback;
+	public function request(string $ip, string $key, Closure $on_success, Closure $on_failure) : void{
+		self::$callbacks[$callback_id = ++self::$callback_ids] = new AntiVPNResultCallback($on_success, $on_failure);
 		$this->incoming[] = igbinary_serialize(new AntiVPNRequest($ip, $key, $callback_id));
 		$this->synchronized(function() : void{
 			$this->notify();
@@ -125,7 +125,7 @@ final class AntiVPNThread extends Thread{
 
 			$cb = self::$callbacks[$holder->callback_id];
 			unset(self::$callbacks[$holder->callback_id]);
-			$cb($holder->result);
+			($holder->result instanceof AntiVPNResult ? $cb->on_success : $cb->on_failure)($holder->result);
 		}
 	}
 
