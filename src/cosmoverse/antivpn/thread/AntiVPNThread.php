@@ -86,16 +86,19 @@ final class AntiVPNThread extends Thread{
 
 				curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($incoming));
 				$result = curl_exec($ch);
-
-				try{
-					$json = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
-					if($json["success"]){
-						$result = new AntiVPNResult($json["ip"], $json["is_vpn"], new AntiVPNResultMetadata($json["metadata"]["isp"], $json["metadata"]["indexed"]));
-					}else{
-						$result = new AntiVPNException($json["error"]);
+				if($result !== false){
+					try{
+						$json = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
+						if($json["success"]){
+							$result = new AntiVPNResult($json["ip"], $json["is_vpn"], new AntiVPNResultMetadata($json["metadata"]["isp"], $json["metadata"]["indexed"]));
+						}else{
+							$result = new AntiVPNException($json["error"]);
+						}
+					}catch(Exception $e){
+						$result = new AntiVPNException($e->getMessage());
 					}
-				}catch(Exception $e){
-					$result = new AntiVPNException($e->getMessage());
+				}else{
+					$result = new AntiVPNException("Failed to connect with AntiVPN");
 				}
 
 				$this->outgoing[] = igbinary_serialize(new AntiVPNResultHolder($incoming->callback_id, $result));
@@ -104,6 +107,7 @@ final class AntiVPNThread extends Thread{
 
 			$this->sleep();
 		}
+
 		curl_close($ch);
 	}
 
