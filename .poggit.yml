@@ -1,0 +1,10 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/Cosmoverse/CosmicAntiVPN
+build-by-default: true
+branches:
+- master
+projects:
+  CosmicAntiVPN:
+    path: ""
+    model: virion
+    type: library
+...
