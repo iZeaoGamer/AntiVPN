@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace cosmicpe\antivpn;
+namespace cosmoverse\antivpn;
 
 use Closure;
-use cosmicpe\antivpn\thread\AntiVPNException;
-use cosmicpe\antivpn\thread\AntiVPNResult;
-use cosmicpe\antivpn\thread\AntiVPNThreadPool;
+use cosmoverse\antivpn\thread\AntiVPNException;
+use cosmoverse\antivpn\thread\AntiVPNResult;
+use cosmoverse\antivpn\thread\AntiVPNThreadPool;
 use pocketmine\plugin\Plugin;
 
 class AntiVPN{

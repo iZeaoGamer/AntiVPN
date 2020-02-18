@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace cosmicpe\antivpn\thread;
+namespace cosmoverse\antivpn\thread;
 
 use ClassLoader;
 use Closure;

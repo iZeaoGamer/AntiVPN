@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace cosmicpe\antivpn\thread;
+namespace cosmoverse\antivpn\thread;
 
 use InvalidArgumentException;
 use pocketmine\plugin\Plugin;
