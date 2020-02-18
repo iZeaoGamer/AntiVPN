@@ -1,4 +1,3 @@
-# AntiVPN
 <p align=center><img src="https://antivpn.cosmicpe.me/images/logo.png"></img></p>
 
 A virion that integrates with [CosmicPE Anti-VPN](https://antivpn.cosmicpe.me) service. To use this virion, you'll require an api key which you can obtain from the site upon registration.
