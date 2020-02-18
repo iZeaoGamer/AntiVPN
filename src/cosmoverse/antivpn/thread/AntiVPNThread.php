@@ -40,7 +40,7 @@ final class AntiVPNThread extends Thread{
 		$this->incoming = new Threaded();
 		$this->outgoing = new Threaded();
 
-		if(!libasynql::isPackaged()){
+		if(class_exists(libasynql::class) && !libasynql::isPackaged()){
 			/** @noinspection PhpUndefinedMethodInspection */
 			/** @noinspection NullPointerExceptionInspection */
 			/** @var ClassLoader $cl */
