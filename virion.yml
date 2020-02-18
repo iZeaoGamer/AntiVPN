@@ -1,0 +1,5 @@
+name: CosmicAntiVPN
+antigen: cosmicpe\antivpn
+api: 3.11.2
+version: 0.0.1
+author: Muqsit
