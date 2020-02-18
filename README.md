@@ -22,7 +22,7 @@ $api->check(
 		if($result->isBehindVPN()){
 			$logger->info($result->getIp() . " is behind a VPN hosted by " . $result->getMetadata()->getIsp());
 		}else{
-			$loger->info($result->getIp() . " is not behind a VPN");
+			$logger->info($result->getIp() . " is not behind a VPN");
 		}
 	},
 	function(AntiVPNException $exception) : void{
