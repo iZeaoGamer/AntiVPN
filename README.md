@@ -15,19 +15,20 @@ $api = new AntiVPN($plugin, $api_key, $thread_count);
 ### Checking whether IP is behind a VPN
 ```php
 /** @var AntiVPNResult|AntiVPNException $result */
-$api->check("192.168.1.1", function($result) : void{
-	/** @var Logger $logger */
-	if($result instanceof AntiVPNResult){
+$api->check(
+	"192.168.1.1",
+	function(AntiVPNResult $result) : void{
+		/** @var Logger $logger */
 		if($result->isBehindVPN()){
 			$logger->info($result->getIp() . " is behind a VPN hosted by " . $result->getMetadata()->getIsp());
 		}else{
 			$loger->info($result->getIp() . " is not behind a VPN");
 		}
-	}else{
-		assert($result instanceof AntiVPNException);
+	},
+	function(AntiVPNException $exception) : void{
 		$logger->exception($result);
 	}
-});
+);
 ```
 
 ## Examples
