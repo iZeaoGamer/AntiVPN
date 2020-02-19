@@ -53,6 +53,14 @@ final class AntiVPNThreadPool{
 		return $this->threads[0];
 	}
 
+	public function waitAll() : void{
+		foreach($this->threads as $thread){
+			while($thread->isBusy()){
+				$thread->collect();
+			}
+		}
+	}
+
 	public function stop() : void{
 		foreach($this->threads as $thread){
 			$thread->stop();

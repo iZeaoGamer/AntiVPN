@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace cosmoverse\antivpn\thread;
+namespace cosmoverse\antivpn\api\ip;
 
-final class AntiVPNResultMetadata{
+final class AntiVPNIPResultMetadata{
 
 	/** @var string */
 	private $isp;

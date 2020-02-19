@@ -6,6 +6,12 @@ namespace cosmoverse\antivpn\thread;
 
 use ClassLoader;
 use Closure;
+use cosmoverse\antivpn\api\AntiVPNRequest;
+use cosmoverse\antivpn\thread\request\AntiVPNRequestCallback;
+use cosmoverse\antivpn\thread\request\AntiVPNRequestHolder;
+use cosmoverse\antivpn\thread\result\AntiVPNResultHolder;
+use cosmoverse\antivpn\thread\result\AntiVPNResultTypeFailure;
+use cosmoverse\antivpn\thread\result\AntiVPNResultTypeSuccess;
 use Exception;
 use pocketmine\Server;
 use pocketmine\Thread;
@@ -17,7 +23,7 @@ final class AntiVPNThread extends Thread{
 	/** @var int */
 	private static $callback_ids = 0;
 
-	/** @var AntiVPNResultCallback[] */
+	/** @var AntiVPNRequestCallback[] */
 	private static $callbacks = [];
 
 	/** @var bool */
@@ -57,13 +63,17 @@ final class AntiVPNThread extends Thread{
 		});
 	}
 
+	public function isBusy() : bool{
+		return count($this->incoming) > 0 || count($this->outgoing) > 0;
+	}
+
 	public function getBusyScore() : int{
 		return count($this->incoming) + ($this->working ? INT32_MAX : 0);
 	}
 
-	public function request(string $ip, string $key, Closure $on_success, Closure $on_failure) : void{
-		self::$callbacks[$callback_id = ++self::$callback_ids] = new AntiVPNResultCallback($on_success, $on_failure);
-		$this->incoming[] = igbinary_serialize(new AntiVPNRequest($ip, $key, $callback_id));
+	public function request(AntiVPNRequest $request, Closure $on_success, Closure $on_failure) : void{
+		self::$callbacks[$callback_id = ++self::$callback_ids] = new AntiVPNRequestCallback($on_success, $on_failure);
+		$this->incoming[] = igbinary_serialize(new AntiVPNRequestHolder($request, $callback_id));
 		$this->synchronized(function() : void{
 			$this->notify();
 		});
@@ -73,7 +83,7 @@ final class AntiVPNThread extends Thread{
 		$this->running = true;
 		$this->registerClassLoader();
 
-		$ch = curl_init($this->url . "/api/ip");
+		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
@@ -81,24 +91,27 @@ final class AntiVPNThread extends Thread{
 			while(($incoming = $this->incoming->shift()) !== null){
 				$this->working = true;
 
-				/** @var AntiVPNRequest $incoming */
+				/** @var AntiVPNRequestHolder $incoming */
 				$incoming = igbinary_unserialize($incoming);
+				$request = $incoming->request;
 
-				curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($incoming));
+				curl_setopt($ch, CURLOPT_URL, $this->url . $request->api_path);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($request));
 				$result = curl_exec($ch);
+
 				if($result !== false){
 					try{
 						$json = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
 						if($json["success"]){
-							$result = new AntiVPNResult($json["ip"], $json["is_vpn"], new AntiVPNResultMetadata($json["metadata"]["isp"], $json["metadata"]["indexed"]));
+							$result = new AntiVPNResultTypeSuccess($request->createResult($json));
 						}else{
-							$result = new AntiVPNException($json["error"]);
+							$result = new AntiVPNResultTypeFailure(new AntiVPNException($json["error"]));
 						}
 					}catch(Exception $e){
-						$result = new AntiVPNException($e->getMessage());
+						$result = new AntiVPNResultTypeFailure(new AntiVPNException($e->getMessage()));
 					}
 				}else{
-					$result = new AntiVPNException("Failed to connect with AntiVPN");
+					$result = new AntiVPNResultTypeFailure(new AntiVPNException("Failed to connect with AntiVPN"));
 				}
 
 				$this->outgoing[] = igbinary_serialize(new AntiVPNResultHolder($incoming->callback_id, $result));
@@ -125,7 +138,7 @@ final class AntiVPNThread extends Thread{
 
 			$cb = self::$callbacks[$holder->callback_id];
 			unset(self::$callbacks[$holder->callback_id]);
-			($holder->result instanceof AntiVPNResult ? $cb->on_success : $cb->on_failure)($holder->result);
+			$holder->type->notify($cb);
 		}
 	}
 
