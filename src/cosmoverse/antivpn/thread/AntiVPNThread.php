@@ -13,12 +13,16 @@ use cosmoverse\antivpn\thread\result\AntiVPNResultHolder;
 use cosmoverse\antivpn\thread\result\AntiVPNResultTypeFailure;
 use cosmoverse\antivpn\thread\result\AntiVPNResultTypeSuccess;
 use Exception;
+use Logger;
 use pocketmine\Server;
 use pocketmine\Thread;
+use pocketmine\utils\MainLogger;
 use poggit\libasynql\libasynql;
 use Threaded;
 
 final class AntiVPNThread extends Thread{
+
+	private const MAX_RETRIES = 3;
 
 	/** @var int */
 	private static $callback_ids = 0;
@@ -26,14 +30,17 @@ final class AntiVPNThread extends Thread{
 	/** @var AntiVPNRequestCallback[] */
 	private static $callbacks = [];
 
+	/** @var int */
+	private $busy_score = 0;
+
 	/** @var bool */
 	private $running = false;
 
-	/** @var bool */
-	private $working = false;
-
 	/** @var string */
 	private $url;
+
+	/** @var Logger */
+	private $logger;
 
 	/** @var Threaded<string> */
 	private $incoming;
@@ -43,6 +50,7 @@ final class AntiVPNThread extends Thread{
 
 	public function __construct(string $url){
 		$this->url = $url;
+		$this->logger = MainLogger::getLogger();
 		$this->incoming = new Threaded();
 		$this->outgoing = new Threaded();
 
@@ -63,17 +71,14 @@ final class AntiVPNThread extends Thread{
 		});
 	}
 
-	public function isBusy() : bool{
-		return count($this->incoming) > 0 || count($this->outgoing) > 0;
-	}
-
 	public function getBusyScore() : int{
-		return count($this->incoming) + ($this->working ? INT32_MAX : 0);
+		return $this->busy_score;
 	}
 
 	public function request(AntiVPNRequest $request, Closure $on_success, Closure $on_failure) : void{
 		self::$callbacks[$callback_id = ++self::$callback_ids] = new AntiVPNRequestCallback($on_success, $on_failure);
 		$this->incoming[] = igbinary_serialize(new AntiVPNRequestHolder($request, $callback_id));
+		++$this->busy_score;
 		$this->synchronized(function() : void{
 			$this->notify();
 		});
@@ -81,23 +86,31 @@ final class AntiVPNThread extends Thread{
 
 	public function run() : void{
 		$this->running = true;
+
 		$this->registerClassLoader();
 
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+		curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
 
 		while($this->running){
 			while(($incoming = $this->incoming->shift()) !== null){
-				$this->working = true;
-
 				/** @var AntiVPNRequestHolder $incoming */
 				$incoming = igbinary_unserialize($incoming);
 				$request = $incoming->request;
 
 				curl_setopt($ch, CURLOPT_URL, $this->url . $request->api_path);
 				curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($request));
-				$result = curl_exec($ch);
+
+				$retries = 0;
+				while(($result = curl_exec($ch)) === false){
+					if(++$retries === self::MAX_RETRIES){
+						break;
+					}
+					$this->logger->debug("Failed to connect with AntiVPN, retrying (" . $retries . ")");
+				}
 
 				if($result !== false){
 					try{
@@ -115,7 +128,10 @@ final class AntiVPNThread extends Thread{
 				}
 
 				$this->outgoing[] = igbinary_serialize(new AntiVPNResultHolder($incoming->callback_id, $result));
-				$this->working = false;
+
+				if(!$this->running){
+					break;
+				}
 			}
 
 			$this->sleep();
@@ -139,6 +155,7 @@ final class AntiVPNThread extends Thread{
 			$cb = self::$callbacks[$holder->callback_id];
 			unset(self::$callbacks[$holder->callback_id]);
 			$holder->type->notify($cb);
+			--$this->busy_score;
 		}
 	}
 

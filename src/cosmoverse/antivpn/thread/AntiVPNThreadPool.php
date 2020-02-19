@@ -47,15 +47,24 @@ final class AntiVPNThreadPool{
 	}
 
 	public function pickLeastBusyThread() : AntiVPNThread{
-		usort($this->threads, static function(AntiVPNThread $a, AntiVPNThread $b) : int{
-			return $a->getBusyScore() <=> $b->getBusyScore();
-		});
-		return $this->threads[0];
+		$best = null;
+		$best_score = INF;
+		foreach($this->threads as $thread){
+			$score = $thread->getBusyScore();
+			if($score < $best_score){
+				$best_score = $score;
+				$best = $thread;
+				if($score === 0){
+					break;
+				}
+			}
+		}
+		return $best;
 	}
 
 	public function waitAll() : void{
 		foreach($this->threads as $thread){
-			while($thread->isBusy()){
+			while($thread->getBusyScore() > 0){
 				$thread->collect();
 			}
 		}
