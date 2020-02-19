@@ -7,7 +7,10 @@ namespace cosmoverse\antivpn;
 use Closure;
 use cosmoverse\antivpn\api\AntiVPNRequest;
 use cosmoverse\antivpn\api\AntiVPNResult;
+use cosmoverse\antivpn\api\client\AntiVPNClientRequest;
+use cosmoverse\antivpn\api\client\AntiVPNClientResult;
 use cosmoverse\antivpn\api\ip\AntiVPNIPRequest;
+use cosmoverse\antivpn\api\ip\AntiVPNIPResult;
 use cosmoverse\antivpn\thread\AntiVPNException;
 use cosmoverse\antivpn\thread\AntiVPNThreadPool;
 use pocketmine\plugin\Plugin;
@@ -31,8 +34,21 @@ class AntiVPN{
 		return AntiVPNThreadPool::from($plugin, $thread_count, self::URL);
 	}
 
+	/**
+	 * @param string $ip
+	 * @param Closure<AntiVPNIPResult> $on_success
+	 * @param Closure<AntiVPNException> $on_failure
+	 */
 	public function checkIp(string $ip, Closure $on_success, Closure $on_failure) : void{
 		$this->request(new AntiVPNIPRequest($this->api_key, $ip), $on_success, $on_failure);
+	}
+
+	/**
+	 * @param Closure<AntiVPNClientResult> $on_success
+	 * @param Closure<AntiVPNException> $on_failure
+	 */
+	public function getClientData(Closure $on_success, Closure $on_failure) : void{
+		$this->request(new AntiVPNClientRequest($this->api_key), $on_success, $on_failure);
 	}
 
 	/**
@@ -42,6 +58,10 @@ class AntiVPN{
 	 */
 	public function request(AntiVPNRequest $request, Closure $on_success, Closure $on_failure) : void{
 		$this->pool->pickLeastBusyThread()->request($request, $on_success, $on_failure);
+	}
+
+	public function waitAll() : void{
+		$this->pool->waitAll();
 	}
 
 	public function close() : void{
