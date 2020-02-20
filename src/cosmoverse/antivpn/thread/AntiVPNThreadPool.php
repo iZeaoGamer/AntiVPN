@@ -10,10 +10,10 @@ use pocketmine\scheduler\ClosureTask;
 
 final class AntiVPNThreadPool{
 
-	public static function from(Plugin $plugin, int $capacity, string $url) : AntiVPNThreadPool{
+	public static function from(Plugin $plugin, int $capacity, string $url, SSLConfiguration $ssl_configuration) : AntiVPNThreadPool{
 		$threads = [];
 		for($i = 0; $i < $capacity; $i++){
-			$threads[] = new AntiVPNThread($url);
+			$threads[] = new AntiVPNThread($url, $ssl_configuration);
 		}
 		return new AntiVPNThreadPool($plugin, $threads);
 	}

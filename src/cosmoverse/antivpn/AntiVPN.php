@@ -13,6 +13,7 @@ use cosmoverse\antivpn\api\ip\AntiVPNIPRequest;
 use cosmoverse\antivpn\api\ip\AntiVPNIPResult;
 use cosmoverse\antivpn\thread\AntiVPNException;
 use cosmoverse\antivpn\thread\AntiVPNThreadPool;
+use cosmoverse\antivpn\thread\SSLConfiguration;
 use pocketmine\plugin\Plugin;
 
 class AntiVPN{
@@ -25,13 +26,13 @@ class AntiVPN{
 	/** @var AntiVPNThreadPool */
 	protected $pool;
 
-	public function __construct(Plugin $plugin, string $api_key, int $thread_count){
+	public function __construct(Plugin $plugin, string $api_key, int $thread_count, ?SSLConfiguration $ssl_configuration = null){
 		$this->api_key = $api_key;
-		$this->pool = $this->createThreadPool($plugin, $thread_count);
+		$this->pool = $this->createThreadPool($plugin, $thread_count, $ssl_configuration);
 	}
 
-	protected function createThreadPool(Plugin $plugin, int $thread_count) : AntiVPNThreadPool{
-		return AntiVPNThreadPool::from($plugin, $thread_count, self::URL);
+	protected function createThreadPool(Plugin $plugin, int $thread_count, ?SSLConfiguration $ssl_configuration = null) : AntiVPNThreadPool{
+		return AntiVPNThreadPool::from($plugin, $thread_count, self::URL, $ssl_configuration ?? SSLConfiguration::recommended());
 	}
 
 	/**

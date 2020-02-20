@@ -48,9 +48,13 @@ final class AntiVPNThread extends Thread{
 	/** @var Threaded<string> */
 	private $outgoing;
 
-	public function __construct(string $url){
+	/** @var string */
+	private $ca_path;
+
+	public function __construct(string $url, SSLConfiguration $ssl_configuration){
 		$this->url = $url;
 		$this->logger = MainLogger::getLogger();
+		$this->ca_path = $ssl_configuration->getCAInfoPath();
 		$this->incoming = new Threaded();
 		$this->outgoing = new Threaded();
 
@@ -94,8 +98,9 @@ final class AntiVPNThread extends Thread{
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
 		curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+		if($this->ca_path !== ""){
+			curl_setopt($ch, CURLOPT_CAPATH, $this->ca_path);
+		}
 
 		while($this->running){
 			while(($incoming = $this->incoming->shift()) !== null){
@@ -111,7 +116,7 @@ final class AntiVPNThread extends Thread{
 					if(++$retries === self::MAX_RETRIES){
 						break;
 					}
-					$this->logger->debug("Failed to connect with AntiVPN, retrying (" . $retries . ")");
+					$this->logger->debug("Failed to connect with AntiVPN (" . curl_errno($ch) . ": " . curl_error($ch) . "), retrying (" . $retries . ")");
 				}
 
 				if($result !== false){
@@ -126,7 +131,7 @@ final class AntiVPNThread extends Thread{
 						$result = new AntiVPNResultTypeFailure(new AntiVPNException($e->getMessage()));
 					}
 				}else{
-					$result = new AntiVPNResultTypeFailure(new AntiVPNException("Failed to connect with AntiVPN"));
+					$result = new AntiVPNResultTypeFailure(new AntiVPNException("Failed to connect with AntiVPN (" . curl_errno($ch) . "): " . curl_error($ch)));
 				}
 
 				$this->outgoing[] = igbinary_serialize(new AntiVPNResultHolder($incoming->callback_id, $result));
