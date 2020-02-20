@@ -12,7 +12,7 @@ final class SSLConfiguration{
 
 	public static function recommended() : SSLConfiguration{
 		static $instance = null;
-		return $instance ?? $instance = new self("resources/cacert.pem");
+		return $instance ?? $instance = new self(__DIR__ . "/resources/cacert.pem");
 	}
 
 	public static function downloadedFrom(string $url) : SSLConfiguration{
