@@ -41,8 +41,8 @@ final class SSLConfiguration{
 
 	public function close() : void{
 		if($this->resource !== null){
-			$this->resource = null;
 			fclose($this->resource);
+			$this->resource = null;
 		}
 	}
 }
