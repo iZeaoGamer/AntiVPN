@@ -11,15 +11,17 @@ final class SSLConfiguration{
 	}
 
 	public static function recommended() : SSLConfiguration{
-		static $instance = null;
-		return $instance ?? $instance = new self(__DIR__ . "/resources/cacert.pem");
+		return self::fromData(file_get_contents(__DIR__ . "/resources/cacert.pem"));
 	}
 
-	public static function downloadedFrom(string $url) : SSLConfiguration{
+	public static function fromURL(string $url) : SSLConfiguration{
+		return self::fromData(file_get_contents($url));
+	}
+
+	public static function fromData(string $data) : SSLConfiguration{
 		$file = tmpfile();
-		fwrite($file, file_get_contents($url));
-		$path = stream_get_meta_data($file)["uri"];
-		return new self($path);
+		fwrite($file, $data);
+		return new self(stream_get_meta_data($file)["uri"]);
 	}
 
 	/** @var string */
