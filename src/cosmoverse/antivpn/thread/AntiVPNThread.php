@@ -94,6 +94,8 @@ final class AntiVPNThread extends Thread{
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
 		curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
 		while($this->running){
 			while(($incoming = $this->incoming->shift()) !== null){
@@ -103,8 +105,6 @@ final class AntiVPNThread extends Thread{
 
 				curl_setopt($ch, CURLOPT_URL, $this->url . $request->api_path);
 				curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($request));
-				curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
 				$retries = 0;
 				while(($result = curl_exec($ch)) === false){
