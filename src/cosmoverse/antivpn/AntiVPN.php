@@ -26,6 +26,15 @@ class AntiVPN{
 	/** @var AntiVPNThreadPool */
 	protected $pool;
 
+	/**
+	 * Leave $ssl_configuration empty to use the recommended
+	 * configuration.
+	 *
+	 * @param Plugin $plugin
+	 * @param string $api_key
+	 * @param int $thread_count
+	 * @param SSLConfiguration|null $ssl_configuration
+	 */
 	public function __construct(Plugin $plugin, string $api_key, int $thread_count, ?SSLConfiguration $ssl_configuration = null){
 		$this->api_key = $api_key;
 		$this->pool = $this->createThreadPool($plugin, $thread_count, $ssl_configuration);
