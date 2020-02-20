@@ -32,7 +32,7 @@ class AntiVPN{
 	}
 
 	protected function createThreadPool(Plugin $plugin, int $thread_count, ?SSLConfiguration $ssl_configuration = null) : AntiVPNThreadPool{
-		return AntiVPNThreadPool::from($plugin, $thread_count, self::URL, $ssl_configuration ?? SSLConfiguration::recommended());
+		return AntiVPNThreadPool::from($plugin, $thread_count, self::URL, $ssl_configuration ?? SSLConfiguration::empty());
 	}
 
 	/**
