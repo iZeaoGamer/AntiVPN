@@ -34,7 +34,7 @@ final class AntiVPNThreadPool{
 			throw new InvalidArgumentException("Empty array passed");
 		}
 
-		$this->configuration = $ssl_configuration;
+		$this->ssl_configuration = $ssl_configuration;
 
 		foreach($threads as $thread){
 			$this->addThread($thread);
