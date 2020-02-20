@@ -15,17 +15,21 @@ final class AntiVPNThreadPool{
 		for($i = 0; $i < $capacity; $i++){
 			$threads[] = new AntiVPNThread($url, $ssl_configuration);
 		}
-		return new AntiVPNThreadPool($plugin, $threads);
+		return new AntiVPNThreadPool($plugin, $threads, $ssl_configuration);
 	}
 
 	/** @var AntiVPNThread[] */
 	private $threads = [];
 
+	/** @var SSLConfiguration */
+	private $ssl_configuration;
+
 	/**
 	 * @param Plugin $plugin
 	 * @param AntiVPNThread[] $threads
+	 * @param SSLConfiguration $ssl_configuration
 	 */
-	public function __construct(Plugin $plugin, array $threads){
+	public function __construct(Plugin $plugin, array $threads, SSLConfiguration $ssl_configuration){
 		if(count($threads) === 0){
 			throw new InvalidArgumentException("Empty array passed");
 		}
@@ -39,6 +43,8 @@ final class AntiVPNThreadPool{
 				$thread->collect();
 			}
 		}), 1);
+
+		$this->configuration = $ssl_configuration;
 	}
 
 	public function addThread(AntiVPNThread $thread) : void{
@@ -75,5 +81,6 @@ final class AntiVPNThreadPool{
 			$thread->stop();
 			$thread->join();
 		}
+		$this->ssl_configuration->close();
 	}
 }

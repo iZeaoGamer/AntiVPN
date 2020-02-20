@@ -19,19 +19,30 @@ final class SSLConfiguration{
 	}
 
 	public static function fromData(string $data) : SSLConfiguration{
-		$file = tmpfile();
-		fwrite($file, $data);
-		return new self(stream_get_meta_data($file)["uri"]);
+		$resource = tmpfile();
+		fwrite($resource, $data);
+		return new self(stream_get_meta_data($resource)["uri"], $resource);
 	}
 
 	/** @var string */
 	private $cainfo_path;
 
-	public function __construct(string $cainfo_path){
+	/** @var resource|null */
+	private $resource;
+
+	public function __construct(string $cainfo_path, $resource = null){
 		$this->cainfo_path = $cainfo_path;
+		$this->resource = $resource;
 	}
 
 	public function getCAInfoPath() : string{
 		return $this->cainfo_path;
+	}
+
+	public function close() : void{
+		if($this->resource !== null){
+			$this->resource = null;
+			fclose($this->resource);
+		}
 	}
 }
