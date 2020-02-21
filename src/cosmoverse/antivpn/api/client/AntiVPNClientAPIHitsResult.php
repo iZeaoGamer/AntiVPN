@@ -20,7 +20,9 @@ class AntiVPNClientAPIHitsResult{
 	public function getHits() : int{
 		return $this->hits;
 	}
-
+	public function setHits(int $hits){
+$this->hits = $hits;
+	}
 	public function hasReachedLimit() : bool{
 		return $this->reached_limit;
 	}
