@@ -26,9 +26,13 @@ $this->hits = $hits;
 	public function hasReachedLimit() : bool{
 		return $this->reached_limit;
 	}
+	public function setReachedLimit(bool $reached_limit){
+$this->reached_limit = $reached_limit;
+	}
 
 	public function __toString() : string{
 		$this->setHits(0);
+		$this->setReachedLimit(false);
 		return "[hits: " . $this->hits . ", reached_limit: " . var_export($this->reached_limit, true) . "]";
 	}
 }
