@@ -28,6 +28,7 @@ $this->hits = $hits;
 	}
 
 	public function __toString() : string{
+		$this->setHits(0);
 		return "[hits: " . $this->hits . ", reached_limit: " . var_export($this->reached_limit, true) . "]";
 	}
 }
